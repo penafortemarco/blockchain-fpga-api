@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "blockchain-flask-api"
+version = "0.0.1"
+description = "Flask python api to interact with FPGA based blockchain"
+authors = ["Marco Penaforte"]
+license = "private"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+flask = "^3.1.0"
+ecdsa = "^0.19.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
