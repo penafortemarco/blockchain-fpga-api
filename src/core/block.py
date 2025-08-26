@@ -1,53 +1,69 @@
-import json
+# src/core/block.py
+
 from time import time
 from hashlib import sha256
+
+HEX64 = 64
+STD_DIFFICULTY = 8
 
 class Block:
     """
     Block representations class
 
-    
     """
+
     def __init__ (
         self,
         prev_block_hash: str,        
         merkle_root: str = "",
-        data: str = "",
+        timestamp: int = int(time()),
+        difficulty: int = 0,
         nonce: int = 0,
-        timestamp: int = None,
+        data: str = "",
     ):
         """
-        - Params: 'nonce' and 'timestamp' default to 0 and current time. 
-        'data' and 'merkle_root' are empty by default. 
-        'prev_block_hash' is mandatory for a block in the chain.
-
+        - prev_block_hash: is padded auto
+        - merkle_root: can be passed if previously calculated, else is the hash of data
+        - timestamp: defaults to int(time())
+        - difficulty: number of '0' in HEX needed to header's hash be valid
+        - nonce: defaults to 0
+        - data: string
         
         - Serialization: uses json.dumps() with sort_keys=True to ensure 
         deterministic hashing across identical block data.
         """
+
+
+        if not all(c in "0123456789ABCDEF" for c in prev_block_hash):
+            raise ValueError("Error (ValueError): prev_block_hash must be a 64-hex string")
+
+        l = len(prev_block_hash) 
+        if l != 64:
+            prev_block_hash = (64 - l)*"0" + prev_block_hash
+
         self.prev_block_hash = prev_block_hash
-        self.timestamp = timestamp if timestamp is not None else int(time())
+
+        self.merkle_root = merkle_root or sha256(data.encode()).hexdigest()
+        
+        self.timestamp = timestamp
+
+        self.difficulty = difficulty
+
         self.nonce = nonce
-        self.merkle_root = merkle_root
+
         self.data = data
+
+
+    def get_block_header(self):
+        """
+        Returns the block header in a bytes-like type
+        """
+        return f"{self.prev_block_hash}{self.merkle_root}{self.timestamp}{self.difficulty}{self.nonce}".encode()
+
 
     def get_block_hash(self):
         """
-        Returns the block hash (SHA256).
+        Returns the block sha256 hash in hexadecimal encoding.
         """
-        block_str = json.dumps(self.__dict__, sort_keys=True)
-        return  sha256(block_str.encode()).hexdigest()
-    
-    def validate_pow(self, difficulty: int):
-        """
-        Returns True only if hash has the difficulty leading zeroes
-        """
-        block_hash = self.get_block_hash()
-        return block_hash.startswith('0' * difficulty)
-    
-    def __repr__(self):
-        """
-        Block JSON string.
-        """
-        return json.dumps(self.__dict__, sort_keys=True)
+        return sha256(self.get_block_header()).hexdigest()
     

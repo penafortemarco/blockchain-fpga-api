@@ -32,3 +32,22 @@ A vote has the following simple structure:
 1 Node with two parts?
 All in FPGA, Flask just to emulate other Nodes?
 ## Running
+
+### Communication
+The FPGA component acts as a server at the start of communication.
+The Node initiates it by sending:
+- the ASCII bytes "SYN"
+- followed by a 4-byte integer that indicates how many bytes the Node 
+  will send over the connection
+- and then expects to receive "ACK" from the FPGA before the timeout elapses
+
+The FPGA has a fixed (processing) timeout to send its computation response. 
+When the response is ready, the FPGA initiates the communication by sending:
+- the ASCII bytes "SYN"
+- followed by the 4-byte integer that indicates how many bytes the FPGA 
+  will send over the connection
+- and then expects to receive "ACK" from the Node before the timeout elapses
+
+## Testing
+To ensure a testing of the program logic, we can use a mock_node, in
+the mock_test.sh script
