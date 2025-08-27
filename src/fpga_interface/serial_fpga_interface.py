@@ -5,7 +5,7 @@ import serial
 Receber da serial o resultado e ver se esta correto!!!
 """
 
-STD_SERIAL_PORT = '/dev/tty'
+STD_SERIAL_PORT = '/dev/pts/4'
 STD_SERIAL_BAUD_RATE = 9600
 STD_SERIAL_TIMEOUT = 5
 
@@ -31,11 +31,13 @@ class SerialFPGAInterface:
         self.port = port
         self.baudrate = baudrate
         self.timeout = timeout
+        self.loopback = loopback
 
-        if loopback:
-            self._port_instance = serial.serial_for_url('loop://', baudrate, timeout=timeout)
+    def open(self): 
+        if self.loopback:
+            self._port_instance = serial.serial_for_url('loop://', self.baudrate, timeout=self.timeout)
         else:
-            self._port_instance = serial.Serial(port, baudrate, timeout=timeout)
+            self._port_instance = serial.Serial(self.port, self.baudrate, timeout=self.timeout)
 
 
     def __exit__(self): self.close()
@@ -48,8 +50,11 @@ class SerialFPGAInterface:
     def bin_write(self, buffer) -> int | None:
         if not isinstance(buffer, (bytes, bytearray, memoryview)):
             raise TypeError("Error (TypeError): bin_write expects byte-like buffer")
-        return self._port_instance.write(buffer)
-
+        
+        try:
+            return self._port_instance.write(buffer)
+        except serial.SerialException:
+            return 0
 
     def bin_read(self, buffer_size) -> bytes:
         return self._port_instance.read(buffer_size)
@@ -69,7 +74,7 @@ class SerialFPGAInterface:
 
         try:
             self._port_instance.write(b"SYN")
-            self._port_instance.write("")
+            self._port_instance.write(b"")
 
             if verbose: print(f"Sending {data_size} bytes of data...")
             self._port_instance.write(data)
